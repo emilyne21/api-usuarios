@@ -18,6 +18,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
+// Crear tabla si no existe
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL
+  )`);
+});
+
 // Rutas
 app.get("/users", (req, res) => {
   db.all("SELECT * FROM users", [], (err, rows) => {
@@ -28,13 +37,17 @@ app.get("/users", (req, res) => {
 
 app.post("/users", (req, res) => {
   const { name, email } = req.body;
-  db.run("INSERT INTO users (name, email) VALUES (?, ?)", [name, email], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ id: this.lastID, name, email });
-  });
+  db.run(
+    "INSERT INTO users (name, email) VALUES (?, ?)",
+    [name, email],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID, name, email });
+    }
+  );
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+// Iniciar servidor → escuchar en todas las interfaces
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Servidor corriendo en http://0.0.0.0:${PORT}`);
 });
